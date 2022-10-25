@@ -1,0 +1,30 @@
+{
+    "display_information": {
+        "name": "DME Bot"
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "dmebot",
+            "always_online": true
+        }
+        
+    },
+    "oauth_config": {
+        "scopes": {
+            "bot": [
+            "channels:read",
+            "chat:write",
+            "chat:write.public",
+            "commands",
+            "im:read",
+            "team:read",
+            "users:read"
+            ]
+        }
+    },
+    "settings": {
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": true,
+        "token_rotation_enabled": false
+    }
+}
