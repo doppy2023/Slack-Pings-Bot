@@ -18,7 +18,8 @@
             "commands",
             "im:read",
             "team:read",
-            "users:read"
+            "users:read",
+            "app_mentions:read"
             ]
         }
     },

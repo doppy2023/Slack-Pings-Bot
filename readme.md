@@ -2,7 +2,7 @@
 
 - Requirements
 
-Python 3.10+ https://www.python.org/downloads/
+1. Python 3.10+ https://www.python.org/downloads/
 
 - Creating the bot on Slack
 
@@ -13,8 +13,8 @@ Python 3.10+ https://www.python.org/downloads/
 5. Choose JSON
 6. Copy all the contents in the manifest.json file inside this folder and paste it there
 7. Create bot
-8. Install bot in your workspace. Copy the bot token and paste it inside of the quotation marks in the SLACK_BOT_TOKEN variable in the `.env` file
-9. Copy the app token and paste it inside of the quotation marks in the SLACK_APP_TOKEN variable in the `.env` file.
+8. Install bot in your workspace. Copy the bot token and paste it inside of the quotation marks in the SLACK_BOT_TOKEN variable in the `settings.json` file
+9. Copy the app token and paste it inside of the quotation marks in the SLACK_APP_TOKEN variable in the `settings.json` file.
 
 - Installation
 
