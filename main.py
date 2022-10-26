@@ -33,7 +33,7 @@ def update_home_tab(client, event, logger):
     print(users)
     con.close()
 
-    # If user is in the database, fetch all links and USERPINGER send them to the user
+    # If user is in the database, fetch all links and USERPINGER and send them to the user
     if users:
         con = sqlite3.connect('slack.db')
         cur = con.cursor()
@@ -44,22 +44,29 @@ def update_home_tab(client, event, logger):
         # Create a list of blocks
         blocks = []
 
+        amountOfPings = len(links)
+        blocks.append(
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": f"You have {amountOfPings} Pings!",
+                        "emoji": True
+                        }
+                },
+        )
+        
+
         for link in links:
+
+            
+            
             blocks.append(
                 {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": f"Someone pinged you in a thread: {link[0]}",
-                    },
-                }
-            )
-            blocks.append(
-                {
-                    "type": "section",
-                    "text": {
-                        "type": "mrkdwn",
-                        "text": f"User who pinged you: <@{link[1]}>",
+                        "text": f"<@{link[1]}> pinged you: <{link[0]}|Click Here>",
                     },
                 }
             )
@@ -67,6 +74,24 @@ def update_home_tab(client, event, logger):
                 {
                     "type": "divider",
                 }
+            )
+
+            blocks.append(
+                {
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "Dismiss",
+						"emoji": True
+					},
+					"value": "click_me_123",
+					"action_id": "actionId-0"
+				}
+			]
+		}
             )
 
         app.client.views_publish(user_id= user_id, view= {
@@ -94,6 +119,113 @@ def update_home_tab(client, event, logger):
 
     
 
+@app.action("actionId-0")
+def handle_some_action(ack, body, logger):
+    ack()
+    
+    print(body)
+
+    userId = body['user']['id']
+    link = body['view']['blocks'][0]['text']['text'].split(": ")[1]
+
+    link = link.replace("<", "")
+    link = link.replace(">", "")
+
+    print(link)
+    con = sqlite3.connect('slack.db')
+    cur = con.cursor()
+    cur.execute("DELETE FROM SLACK WHERE LINK = ? AND USERPINGED = ?", (link, userId))
+    con.commit()
+    con.close()
+
+
+    con = sqlite3.connect('slack.db')
+    cur = con.cursor()
+    users = cur.execute("SELECT USERPINGED FROM SLACK WHERE USERPINGED = ?", (userId,))
+    users = users.fetchall()
+
+    print(users)
+    con.close()
+
+    # If user is in the database, fetch all links and USERPINGER send them to the user
+    if users:
+        con = sqlite3.connect('slack.db')
+        cur = con.cursor()
+        links = cur.execute("SELECT LINK, USERPINGER FROM SLACK WHERE USERPINGED = ?", (userId,))
+        links = links.fetchall()
+        con.close()
+
+        # Create a list of blocks
+        blocks = []
+
+        amountOfPings = len(links)
+        blocks.append(
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": f"You have {amountOfPings} Pings!",
+                        "emoji": True
+                        }
+                },
+        )
+
+        for link in links:
+            
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"<@{link[1]}> pinged you: <{link[0]}|Click Here>",
+                    },
+                }
+            )
+            blocks.append(
+                {
+                    "type": "divider",
+                }
+            )
+
+            blocks.append(
+                {
+			"type": "actions",
+			"elements": [
+				{
+					"type": "button",
+					"text": {
+						"type": "plain_text",
+						"text": "Dismiss",
+						"emoji": True
+					},
+					"value": "click_me_123",
+					"action_id": "actionId-0"
+				}
+			]
+		}
+            )
+
+        app.client.views_publish(user_id= userId, view= {
+        "type":"home",
+        "blocks": blocks
+        })
+
+        # Send the message back to Slack
+    else:
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "You have no pings",
+                },
+            }
+        ]
+
+        app.client.views_publish(user_id= userId, view= {
+        "type":"home",
+        "blocks": blocks
+        })
 
 
 
