@@ -10,11 +10,92 @@ with open("settings.json", "r") as f:
 
 #Create database if it doesn't exist
 con = sqlite3.connect('slack.db')
-con.execute("""CREATE TABLE IF NOT EXISTS SLACK (USERID text, PINGED BOOLEAN NOT NULL CHECK (PINGED IN (0, 1)))""")
+con.execute("""CREATE TABLE IF NOT EXISTS SLACK (LINK text, USERPINGER text, USERPINGED text, PINGED BOOLEAN NOT NULL CHECK (PINGED IN (0, 1)))""")
 con.commit()
 con.close()
 
 app = App(token=settings["SLACK_BOT_TOKEN"], signing_secret= settings['SLACK_SIGNING_SECRET'])
+
+
+@app.event("app_home_opened")
+def update_home_tab(client, event, logger):
+
+    # Get the user ID associated with the event
+    user_id = event["user"]
+
+    # Check if user is in the database and fetch all 
+
+    con = sqlite3.connect('slack.db')
+    cur = con.cursor()
+    users = cur.execute("SELECT USERPINGED FROM SLACK WHERE USERPINGED = ?", (user_id,))
+    users = users.fetchall()
+
+    print(users)
+    con.close()
+
+    # If user is in the database, fetch all links and USERPINGER send them to the user
+    if users:
+        con = sqlite3.connect('slack.db')
+        cur = con.cursor()
+        links = cur.execute("SELECT LINK, USERPINGER FROM SLACK WHERE USERPINGED = ?", (user_id,))
+        links = links.fetchall()
+        con.close()
+
+        # Create a list of blocks
+        blocks = []
+
+        for link in links:
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"Someone pinged you in a thread: {link[0]}",
+                    },
+                }
+            )
+            blocks.append(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"User who pinged you: <@{link[1]}>",
+                    },
+                }
+            )
+            blocks.append(
+                {
+                    "type": "divider",
+                }
+            )
+
+        app.client.views_publish(user_id= user_id, view= {
+        "type":"home",
+        "blocks": blocks
+        })
+
+        # Send the message back to Slack
+    else:
+        blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "You have no pings",
+                },
+            }
+        ]
+
+        app.client.views_publish(user_id= user_id, view= {
+        "type":"home",
+        "blocks": blocks
+        })
+        
+
+    
+
+
+
 
 @app.event("message")
 def event(say, payload):
@@ -22,6 +103,10 @@ def event(say, payload):
 
     userId = payload['user']
 
+
+    message_link = app.client.chat_getPermalink(channel=payload['channel'], message_ts=payload['ts'])['permalink']
+
+    print(message_link)
     text = payload['text']
     
     #Check if the message contains a ping
@@ -42,24 +127,16 @@ def event(say, payload):
 
     
     for user in users:
-        if user == userId:
-            continue 
+        #if user == userId:
+            #continue 
         
         con = sqlite3.connect('slack.db')
         cur = con.cursor()
-
-        databaseUsers = cur.execute("SELECT USERID FROM SLACK WHERE USERID = ?", (user,)).fetchall()
-
-        if len(databaseUsers) == 0:
-            cur.execute(f"""INSERT INTO SLACK VALUES (?, 1)""", (user,))
-            con.commit()
-            con.close()
-
-        else:
-            cur.execute(f"""UPDATE SLACK SET PINGED = 1 WHERE USERID = ?""", (user,))
-            con.commit()
-            con.close()
         
+        cur.execute(f"""INSERT INTO SLACK VALUES (?, ?, ?, 1)""", (message_link, userId, user,))
+        con.commit()
+        con.close()
+
         
 
    
