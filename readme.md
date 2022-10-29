@@ -20,5 +20,6 @@
 
 1. Extract the zip onto a folder
 2. Open terminal or CMD and cd onto the folder. (If you're on mac just drag the folder to the terminal!)
+3. Rename `sample_settings.json` to `settings.json`
 3. Run `python3 main.py` or `py main.py`
 4. The bot is running!
